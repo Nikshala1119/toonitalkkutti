@@ -1,19 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { Asset } from 'expo-asset';
 import { Tutor, TutorState } from './Tutor';
+import { subscribeVisemes } from '../audio/tutorVoice';
 
-// Rive-rigged tutor (FR-1.1/FR-1.2). Degrades gracefully:
+// Rive-rigged tutor (FR-1.1/FR-1.2). Contract: docs/kutti-rive-spec.md.
+// Degrades gracefully:
 //  - In Expo Go the rive-react-native native module is absent → emoji Tutor.
-//  - In the dev build it renders the rig; TutorState maps to the rig's state
-//    machine inputs, and viseme events will drive the mouth states once the
-//    real Kutti rig exists.
+//  - In the dev build it renders the rig and drives the `State` and `Viseme`
+//    Number inputs of the `TutorStateMachine` state machine.
 //
 // assets/rive/placeholder.riv is Rive's sample rig (from the
-// rive-react-native example app) purely to prove the render path in the dev
-// build. It is NOT the ToonTalk character and must be replaced by the
-// designed Kutti rig (states: idle, talk, listen, celebrate, encourage,
-// demonstrate, sleep; 8+ mouth shapes) before anything user-facing ships.
+// rive-react-native example app) purely to prove the render path — it has no
+// TutorStateMachine, so input calls no-op until the designed kutti.riv lands.
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let RiveModule: any = null;
@@ -24,20 +23,35 @@ try {
   RiveModule = null;
 }
 
-// The designed Kutti rig will expose a state machine with these input names.
 export const KUTTI_STATE_MACHINE = 'TutorStateMachine';
-export const KUTTI_STATE_INPUTS: Record<TutorState, string> = {
-  idle: 'idle',
-  talk: 'talk',
-  listen: 'listen',
-  celebrate: 'celebrate',
-  encourage: 'encourage',
-  demonstrate: 'demonstrate',
-  sleep: 'sleep',
+
+// docs/kutti-rive-spec.md §3 — `State` Number input
+export const KUTTI_STATE_TO_NUMBER: Record<TutorState, number> = {
+  idle: 0,
+  talk: 1,
+  listen: 2,
+  celebrate: 3,
+  encourage: 4,
+  demonstrate: 5,
+  sleep: 6,
+};
+
+// docs/kutti-rive-spec.md §3 — `Viseme` Number input
+export const VISEME_TO_NUMBER: Record<string, number> = {
+  rest: 0,
+  A: 1,
+  E: 2,
+  O: 3,
+  M: 4,
+  F: 5,
+  L: 6,
+  W: 7,
 };
 
 export function RiveTutor({ state, size = 160 }: { state: TutorState; size?: number }) {
   const [rigUri, setRigUri] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const riveRef = useRef<any>(null);
 
   useEffect(() => {
     if (!RiveModule) return;
@@ -47,6 +61,35 @@ export function RiveTutor({ state, size = 160 }: { state: TutorState; size?: num
       .catch(() => setRigUri(null));
   }, []);
 
+  // Drive the State input (no-op on rigs without TutorStateMachine)
+  useEffect(() => {
+    try {
+      riveRef.current?.setInputState(
+        KUTTI_STATE_MACHINE,
+        'State',
+        KUTTI_STATE_TO_NUMBER[state],
+      );
+    } catch {
+      // placeholder rig — ignore
+    }
+  }, [state, rigUri]);
+
+  // Drive the Viseme input from the audio timeline
+  useEffect(() => {
+    if (!RiveModule) return;
+    return subscribeVisemes((shape) => {
+      try {
+        riveRef.current?.setInputState(
+          KUTTI_STATE_MACHINE,
+          'Viseme',
+          VISEME_TO_NUMBER[shape] ?? 0,
+        );
+      } catch {
+        // placeholder rig — ignore
+      }
+    });
+  }, [rigUri]);
+
   if (!RiveModule || !rigUri) {
     return <Tutor state={state} size={Math.round(size * 0.75)} />;
   }
@@ -54,7 +97,12 @@ export function RiveTutor({ state, size = 160 }: { state: TutorState; size?: num
   const Rive = RiveModule.default;
   return (
     <View style={{ width: size, height: size, alignSelf: 'center' }}>
-      <Rive url={rigUri} autoplay style={{ width: size, height: size }} />
+      <Rive
+        ref={riveRef}
+        url={rigUri}
+        autoplay
+        style={{ width: size, height: size }}
+      />
     </View>
   );
 }
