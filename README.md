@@ -21,9 +21,10 @@ npm run sync-content   # copy content/curriculum → app/assets/curriculum
 npm start              # Expo Go on an Android device/emulator
 ```
 
-Works fully offline with no Supabase project configured. To enable sync, set
-`EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` (e.g. in
-`app/.env`) and apply `supabase/migrations/00001_init.sql` to the project.
+Works fully offline; sync is enabled via `app/.env` (gitignored):
+`EXPO_PUBLIC_SUPABASE_URL` + `EXPO_PUBLIC_SUPABASE_ANON_KEY`. The live backend
+is Supabase project `toonitalk` (ref `kzibivhpauffywnsvgjz`, ap-south-1) with
+`supabase/migrations/*` applied and Units 1–2 seeded into `units`/`activities`.
 
 ## Current state (Phase 1 scaffold)
 
