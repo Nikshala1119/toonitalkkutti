@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Tutor } from '../components/Tutor';
-import { speakLine, stockLines } from '../audio/tutorVoice';
+import { RiveTutor } from '../components/RiveTutor';
+import { speakStockLine, stockLines } from '../audio/tutorVoice';
 
 // FR-2.2: every session ends with a celebration screen — end on a win.
 export function CelebrationScreen({
@@ -12,17 +12,13 @@ export function CelebrationScreen({
   onDone: () => void;
 }) {
   useEffect(() => {
-    speakLine(
-      `${stockLines.sessionEnd.ta} ${stockLines.sessionEnd.en}`,
-      'en-IN',
-      () => undefined,
-    );
+    speakStockLine(stockLines.sessionEnd, () => undefined);
   }, []);
 
   return (
     <View style={styles.root}>
       <Text style={styles.confetti}>🎉🎊✨</Text>
-      <Tutor state="celebrate" size={140} />
+      <RiveTutor state="celebrate" size={180} />
       <Text style={styles.stars}>
         {'⭐'.repeat(Math.max(1, Math.min(stars, 21)))}
       </Text>

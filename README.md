@@ -49,10 +49,45 @@ Simulated for now (dev overlay buttons), each behind a swap-in interface:
 - **Character**: emoji placeholder behind the same `state` prop the Rive rig
   will use (`app/src/components/Tutor.tsx`).
 
+## Content pipeline (`content/`)
+
+```
+cd content && npm install
+npm run dry-run          # list the 70-clip inventory
+npm run bakeoff          # 3 sample lines per configured provider (PRD §10)
+npm run generate:upload  # Azure clips + visemes → Supabase Storage
+```
+
+Azure is the production provider (its SDK emits viseme events → mouth
+timelines). Set `AZURE_SPEECH_KEY` + `AZURE_SPEECH_REGION`; for the bake-off
+optionally `GOOGLE_TTS_API_KEY`, `ELEVENLABS_API_KEY`+`ELEVENLABS_VOICE_ID`,
+`GEMINI_API_KEY`. Upload needs `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`
+(dashboard → Settings → API; never ship it). The app downloads clips from the
+public `tutor-clips` bucket on first use, caches them on device, and falls
+back to device TTS for any clip not yet generated.
+
+## Dev build (Rive + real vision)
+
+Expo Go can't load native modules, so the Rive character and MediaPipe hand
+tracking need a dev build. EAS cloud builds are configured (`app/eas.json`) —
+no local Android SDK required:
+
+```
+cd app
+eas login          # Expo account
+eas init           # links the project (writes projectId into app.json)
+eas build --profile development --platform android
+```
+
+`RiveTutor` renders the rig in the dev build and falls back to the emoji
+placeholder in Expo Go. `assets/rive/placeholder.riv` is Rive's sample file
+to prove the render path — replace with the designed Kutti rig (state machine
+`TutorStateMachine`, inputs per `KUTTI_STATE_INPUTS`, 8+ mouth shapes).
+
 ## Next up
 
-1. Provision a Supabase project, apply the migration, run
-   `upload-curriculum.mjs`, wire auth + child-profile linking.
-2. TTS voice bake-off → run clip generation → clip player in `tutorVoice.ts`.
-3. Expo dev build: Rive runtime + vision-camera frame processor (MediaPipe).
-4. Parent gate + dashboard (Phase 2).
+1. Run the voice bake-off with real keys → generate + upload the clip set.
+2. Commission/design the Kutti rig in Rive; swap `placeholder.riv`.
+3. In the dev build: vision-camera frame processor + MediaPipe hand landmarks
+   to replace `MockVisionProvider` (interface in `app/src/vision/types.ts`).
+4. Parent dashboard (Next.js) — Phase 2.

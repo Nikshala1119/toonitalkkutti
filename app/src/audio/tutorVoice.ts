@@ -1,13 +1,79 @@
 import * as Speech from 'expo-speech';
+import { AudioPlayer, createAudioPlayer } from 'expo-audio';
 import { LanguageLevel, PromptVariant } from '../types/curriculum';
+import { getClipUri, getVisemes } from './clipStore';
 
-// FR-1.3: production uses pre-generated TTS clips + viseme JSON cached on
-// device (played via expo-audio), zero runtime TTS. Until the clip pipeline
-// (content/scripts/generate-tts.mjs) has run, we fall back to on-device
-// expo-speech so the app is testable end to end. The call sites only use
-// speakPrompt/speakLine, so swapping in the clip player is contained here.
+// Tutor voice (FR-1.3): plays pre-generated clips (with viseme-driven mouth
+// timelines) when available; falls back to on-device expo-speech until the
+// clip pipeline (content/scripts/generate-tts.mjs) has run for a line.
+// Call sites only use speakPrompt/speakLine, so the swap is contained here.
 
 export type SpeakDone = () => void;
+
+// --- viseme fan-out (Tutor subscribes for mouth animation) -----------------
+
+type VisemeListener = (shape: string) => void;
+const visemeListeners = new Set<VisemeListener>();
+let visemeTimers: ReturnType<typeof setTimeout>[] = [];
+
+export function subscribeVisemes(cb: VisemeListener): () => void {
+  visemeListeners.add(cb);
+  return () => visemeListeners.delete(cb);
+}
+
+function emitViseme(shape: string) {
+  for (const cb of visemeListeners) cb(shape);
+}
+
+function clearVisemeSchedule() {
+  for (const t of visemeTimers) clearTimeout(t);
+  visemeTimers = [];
+  emitViseme('rest');
+}
+
+// --- playback --------------------------------------------------------------
+
+let activePlayer: AudioPlayer | null = null;
+
+function stopClip() {
+  if (activePlayer) {
+    try {
+      activePlayer.remove();
+    } catch {
+      // already released
+    }
+    activePlayer = null;
+  }
+  clearVisemeSchedule();
+}
+
+async function playClip(clipId: string, onDone: SpeakDone): Promise<boolean> {
+  const uri = await getClipUri(clipId);
+  if (!uri) return false;
+
+  stopClip();
+  const player = createAudioPlayer(uri);
+  activePlayer = player;
+
+  const visemes = await getVisemes(clipId);
+  if (visemes) {
+    for (const ev of visemes.events) {
+      visemeTimers.push(setTimeout(() => emitViseme(ev.shape), ev.t));
+    }
+    visemeTimers.push(
+      setTimeout(() => emitViseme('rest'), visemes.durationMs + 50),
+    );
+  }
+
+  player.addListener('playbackStatusUpdate', (status) => {
+    if (status.didJustFinish && activePlayer === player) {
+      stopClip();
+      onDone();
+    }
+  });
+  player.play();
+  return true;
+}
 
 function speakOne(text: string, language: string, onDone: SpeakDone) {
   Speech.speak(text, {
@@ -21,55 +87,100 @@ function speakOne(text: string, language: string, onDone: SpeakDone) {
 /**
  * Speak a prompt for the given language level.
  * Level A speaks Tamil first then English; B/C lead with English (§3.2).
+ * If `clipId` resolves to a generated clip, that plays instead (with visemes).
  */
 export function speakPrompt(
   prompt: PromptVariant,
   level: LanguageLevel,
   onDone: SpeakDone,
+  clipId?: string,
 ) {
-  const parts: Array<{ text: string; language: string }> = [];
-  if (level === 'A') {
-    if (prompt.ta) parts.push({ text: prompt.ta, language: 'ta-IN' });
-    if (prompt.en) parts.push({ text: prompt.en, language: 'en-IN' });
-  } else {
-    if (prompt.en) parts.push({ text: prompt.en, language: 'en-IN' });
-    if (level === 'B' && prompt.ta) parts.push({ text: prompt.ta, language: 'ta-IN' });
-  }
-  if (parts.length === 0) {
-    onDone();
-    return;
-  }
-  let i = 0;
-  const next = () => {
-    if (i >= parts.length) {
+  const fallback = () => {
+    const parts: Array<{ text: string; language: string }> = [];
+    if (level === 'A') {
+      if (prompt.ta) parts.push({ text: prompt.ta, language: 'ta-IN' });
+      if (prompt.en) parts.push({ text: prompt.en, language: 'en-IN' });
+    } else {
+      if (prompt.en) parts.push({ text: prompt.en, language: 'en-IN' });
+      if (level === 'B' && prompt.ta) parts.push({ text: prompt.ta, language: 'ta-IN' });
+    }
+    if (parts.length === 0) {
       onDone();
       return;
     }
-    const p = parts[i++];
-    speakOne(p.text, p.language, next);
+    let i = 0;
+    const next = () => {
+      if (i >= parts.length) {
+        onDone();
+        return;
+      }
+      const p = parts[i++];
+      speakOne(p.text, p.language, next);
+    };
+    next();
   };
-  next();
+
+  if (clipId) {
+    playClip(clipId, onDone).then((played) => {
+      if (!played) fallback();
+    });
+  } else {
+    fallback();
+  }
 }
 
-export function speakLine(text: string, language: 'ta-IN' | 'en-IN', onDone: SpeakDone) {
-  speakOne(text, language, onDone);
+export function speakLine(
+  text: string,
+  language: 'ta-IN' | 'en-IN',
+  onDone: SpeakDone,
+  clipId?: string,
+) {
+  if (clipId) {
+    playClip(clipId, onDone).then((played) => {
+      if (!played) speakOne(text, language, onDone);
+    });
+  } else {
+    speakOne(text, language, onDone);
+  }
 }
 
 export function stopSpeaking() {
   Speech.stop();
+  stopClip();
 }
 
-// In-character stock lines (will become pre-generated clips).
-export const stockLines = {
-  encourage: [
-    { ta: 'பரவாயில்லை! இன்னொரு முறை முயற்சி செய்!', en: "Let's try again!" },
-    { ta: 'கிட்டத்தட்ட சரி! மறுபடியும் பார்ப்போம்!', en: 'Almost! One more try!' },
-  ],
-  celebrate: [
-    { ta: 'சூப்பர்!', en: 'Super! Well done!' },
-    { ta: 'அருமை!', en: 'Great job!' },
-    { ta: 'வெரி குட்!', en: 'You did it!' },
-  ],
-  demo: { ta: 'பார், நான் காட்டுறேன்!', en: 'Watch me — here is the answer!' },
-  sessionEnd: { ta: 'நல்லா வேலை செய்த! நாளைக்கு பார்க்கலாம்!', en: 'Great work today! See you tomorrow!' },
+// In-character stock lines. Single source of truth is
+// content/curriculum/stock-lines.json (synced into assets); ids map to
+// pre-generated clips.
+interface StockLine {
+  id: string;
+  ta: string | null;
+  en: string | null;
+}
+
+export const stockLines = require('../../assets/curriculum/stock-lines.json') as {
+  encourage: StockLine[];
+  celebrate: StockLine[];
+  demo: StockLine;
+  sessionEnd: StockLine;
 };
+
+/** Speak a stock line: clip first, composed device-TTS fallback. */
+export function speakStockLine(line: StockLine, onDone: SpeakDone) {
+  playClip(line.id, onDone).then((played) => {
+    if (played) return;
+    const parts: Array<{ text: string; language: 'ta-IN' | 'en-IN' }> = [];
+    if (line.ta) parts.push({ text: line.ta, language: 'ta-IN' });
+    if (line.en) parts.push({ text: line.en, language: 'en-IN' });
+    let i = 0;
+    const next = () => {
+      if (i >= parts.length) {
+        onDone();
+        return;
+      }
+      const p = parts[i++];
+      speakOne(p.text, p.language, next);
+    };
+    next();
+  });
+}

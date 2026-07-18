@@ -1,5 +1,6 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
+import { subscribeVisemes } from '../audio/tutorVoice';
 
 // Placeholder for the Rive-rigged "Kutti" character (FR-1.1).
 // Rive (rive-react-native) needs a dev build — it will replace this component
@@ -26,8 +27,17 @@ const FACES: Record<TutorState, string> = {
   sleep: '😴',
 };
 
+// Placeholder mouth shapes driven by the clip viseme timeline (FR-1.2).
+// The Rive rig maps the same shape names to its mouth states.
+const MOUTH: Record<string, string> = {
+  rest: '', A: '😮', E: '😬', O: '😗', M: '😐', F: '🙁', L: '😛', W: '😙',
+};
+
 export function Tutor({ state, size = 120 }: { state: TutorState; size?: number }) {
   const bounce = useRef(new Animated.Value(0)).current;
+  const [mouth, setMouth] = useState('rest');
+
+  useEffect(() => subscribeVisemes(setMouth), []);
 
   useEffect(() => {
     bounce.setValue(0);
@@ -61,7 +71,7 @@ export function Tutor({ state, size = 120 }: { state: TutorState; size?: number 
   return (
     <View style={styles.wrap}>
       <Animated.Text style={[{ fontSize: size, transform: [{ translateY }] }]}>
-        {FACES[state]}
+        {state === 'talk' && MOUTH[mouth] ? MOUTH[mouth] : FACES[state]}
       </Animated.Text>
       {state === 'listen' ? <Text style={styles.hint}>👂 listening…</Text> : null}
     </View>

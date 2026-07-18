@@ -7,8 +7,15 @@ import {
   initialRunState,
   reduceActivity,
 } from '../engine/activityEngine';
-import { speakLine, speakPrompt, stockLines, stopSpeaking } from '../audio/tutorVoice';
-import { Tutor, TutorState } from '../components/Tutor';
+import {
+  speakPrompt,
+  speakStockLine,
+  stockLines,
+  stopSpeaking,
+} from '../audio/tutorVoice';
+import { prefetchClips } from '../audio/clipStore';
+import { TutorState } from '../components/Tutor';
+import { RiveTutor } from '../components/RiveTutor';
 import { TapChoices } from '../components/TapChoices';
 import { CameraStage } from '../components/CameraStage';
 import { AssetTile } from '../components/assetRegistry';
@@ -64,13 +71,31 @@ export function SessionScreen({
     setRun((r) => reduceActivity(r, e));
   }, []);
 
+  // Prefetch this session's clips so playback never waits (FR-2.3)
+  useEffect(() => {
+    const ids: string[] = [];
+    for (const a of activities) {
+      for (const lv of ['A', 'B', 'C'] as const) ids.push(`${a.id}_prompt_${lv}`);
+    }
+    ids.push(
+      ...stockLines.encourage.map((l) => l.id),
+      ...stockLines.celebrate.map((l) => l.id),
+      stockLines.demo.id,
+      stockLines.sessionEnd.id,
+    );
+    prefetchClips(ids);
+  }, [activities]);
+
   // Phase side effects: speaking, feedback lines, demonstration
   useEffect(() => {
     if (!activity) return;
 
     if (run.phase === 'asking') {
-      speakPrompt(activity.prompts[level], level, () =>
-        dispatch({ type: 'PROMPT_DONE' }),
+      speakPrompt(
+        activity.prompts[level],
+        level,
+        () => dispatch({ type: 'PROMPT_DONE' }),
+        `${activity.id}_prompt_${level}`,
       );
       return stopSpeaking;
     }
@@ -78,23 +103,19 @@ export function SessionScreen({
     if (run.phase === 'celebrating') {
       const line =
         stockLines.celebrate[Math.floor(Math.random() * stockLines.celebrate.length)];
-      speakLine(`${line.ta} ${line.en}`, 'en-IN', () =>
-        dispatch({ type: 'FEEDBACK_DONE' }),
-      );
+      speakStockLine(line, () => dispatch({ type: 'FEEDBACK_DONE' }));
       return stopSpeaking;
     }
 
     if (run.phase === 'encouraging') {
       const line =
         stockLines.encourage[Math.floor(Math.random() * stockLines.encourage.length)];
-      speakLine(line.ta, 'ta-IN', () => dispatch({ type: 'FEEDBACK_DONE' }));
+      speakStockLine(line, () => dispatch({ type: 'FEEDBACK_DONE' }));
       return stopSpeaking;
     }
 
     if (run.phase === 'demonstrating') {
-      speakLine(`${stockLines.demo.ta} ${stockLines.demo.en}`, 'en-IN', () =>
-        dispatch({ type: 'DEMO_DONE' }),
-      );
+      speakStockLine(stockLines.demo, () => dispatch({ type: 'DEMO_DONE' }));
       return stopSpeaking;
     }
   }, [run.phase, activity, level, dispatch]);
@@ -104,7 +125,12 @@ export function SessionScreen({
     if (run.phase !== 'awaiting' || !activity || repromptUsed.current) return;
     const t = setTimeout(() => {
       repromptUsed.current = true;
-      speakPrompt(activity.prompts[level], level, () => undefined);
+      speakPrompt(
+        activity.prompts[level],
+        level,
+        () => undefined,
+        `${activity.id}_prompt_${level}`,
+      );
     }, IDLE_REPROMPT_MS);
     return () => clearTimeout(t);
   }, [run.phase, activity, level]);
@@ -211,7 +237,7 @@ export function SessionScreen({
         <Text style={styles.starCount}>⭐ {sessionStars}</Text>
       </View>
 
-      <Tutor state={tutorState} />
+      <RiveTutor state={tutorState} />
 
       <View style={styles.stage}>
         {showTap ? (

@@ -1,0 +1,18 @@
+{
+  "name": "toonitalk-content",
+  "private": true,
+  "type": "module",
+  "description": "Build-time curriculum + TTS clip pipeline (PRD §5.2)",
+  "scripts": {
+    "dry-run": "node scripts/generate-tts.mjs --dry-run",
+    "bakeoff": "node scripts/generate-tts.mjs --bakeoff",
+    "generate": "node scripts/generate-tts.mjs --provider azure",
+    "generate:upload": "node scripts/generate-tts.mjs --provider azure --upload",
+    "sync-app": "node scripts/sync-to-app.mjs",
+    "upload-curriculum": "node scripts/upload-curriculum.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.110.7",
+    "microsoft-cognitiveservices-speech-sdk": "^1.45.0"
+  }
+}

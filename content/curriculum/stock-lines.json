@@ -1,0 +1,13 @@
+{
+  "encourage": [
+    { "id": "common_encourage_1", "ta": "பரவாயில்லை! இன்னொரு முறை முயற்சி செய்!", "en": null },
+    { "id": "common_encourage_2", "ta": "கிட்டத்தட்ட சரி! மறுபடியும் பார்ப்போம்!", "en": null }
+  ],
+  "celebrate": [
+    { "id": "common_celebrate_1", "ta": "சூப்பர்!", "en": "Super! Well done!" },
+    { "id": "common_celebrate_2", "ta": "அருமை!", "en": "Great job!" },
+    { "id": "common_celebrate_3", "ta": "வெரி குட்!", "en": "You did it!" }
+  ],
+  "demo": { "id": "common_demo", "ta": "பார், நான் காட்டுறேன்!", "en": "Watch me — here is the answer!" },
+  "sessionEnd": { "id": "common_session_end", "ta": "நல்லா வேலை செய்த! நாளைக்கு பார்க்கலாம்!", "en": "Great work today! See you tomorrow!" }
+}
