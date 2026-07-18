@@ -1,5 +1,7 @@
 node_modules/
 .expo/
+content/clips/
+content/bakeoff/
 dist/
 web-build/
 *.log

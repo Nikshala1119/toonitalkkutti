@@ -149,10 +149,24 @@ async function googleSynthesize(text) {
   return { audio: Buffer.from(json.audioContent, 'base64'), visemes: null };
 }
 
+let elevenVoiceCache = null;
 async function elevenlabsSynthesize(text) {
   const key = process.env.ELEVENLABS_API_KEY;
-  const voiceId = process.env.ELEVENLABS_VOICE_ID;
-  if (!key || !voiceId) throw new Error('Set ELEVENLABS_API_KEY and ELEVENLABS_VOICE_ID');
+  if (!key) throw new Error('Set ELEVENLABS_API_KEY');
+  let voiceId = process.env.ELEVENLABS_VOICE_ID;
+  if (!voiceId) {
+    // No voice chosen yet: pick the first available voice so generation can
+    // run; the bake-off decides the real one.
+    if (!elevenVoiceCache) {
+      const vr = await fetch('https://api.elevenlabs.io/v1/voices', {
+        headers: { 'xi-api-key': key },
+      });
+      if (!vr.ok) throw new Error(`ElevenLabs voices ${vr.status}`);
+      elevenVoiceCache = (await vr.json()).voices ?? [];
+    }
+    voiceId = elevenVoiceCache[0]?.voice_id;
+    if (!voiceId) throw new Error('No ElevenLabs voices on this account');
+  }
   const res = await fetch(
     `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_64`,
     {
@@ -175,7 +189,18 @@ async function geminiSynthesize(text) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ parts: [{ text }] }],
+        // Style directive + explicit "read this transcript" framing — without
+        // it the model sometimes treats lines like "Say it: RED!" as an
+        // instruction to itself and errors with "tried to generate text".
+        contents: [
+          {
+            parts: [
+              {
+                text: `Read the following transcript aloud exactly as written, in a warm, cheerful, playful voice like a friendly cartoon tutor speaking to a young child. Transcript: ${text}`,
+              },
+            ],
+          },
+        ],
         generationConfig: {
           responseModalities: ['AUDIO'],
           speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } },
@@ -223,20 +248,74 @@ const PROVIDERS = {
   gemini: geminiSynthesize,
 };
 
+// Free tiers rate-limit hard (429s). Retry with backoff, and pace requests
+// via --delay-ms (default 500; use e.g. --delay-ms 12000 for Gemini free tier).
+const delayMs = parseInt(opt('--delay-ms', '500'), 10);
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function synthesizeWithRetry(synthesize, text, label) {
+  let wait = 5000;
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      return await synthesize(text);
+    } catch (err) {
+      const transient =
+        /429|500|502|503|RESOURCE_EXHAUSTED|overloaded|timeout|no audio|fetch failed|tried to generate text/i.test(
+          String(err.message),
+        );
+      if (!transient || attempt >= 6) throw err;
+      console.log(`  ⏳ ${label}: ${err.message.slice(0, 120)} — retry in ${wait / 1000}s`);
+      await sleep(wait);
+      wait = Math.min(wait * 2, 60_000);
+    }
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Upload to Supabase Storage (public bucket `tutor-clips`)
 // ---------------------------------------------------------------------------
 async function makeUploader() {
   const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) throw new Error('Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY for --upload');
-  const { createClient } = await import('@supabase/supabase-js');
-  const supabase = createClient(url, key);
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const anonKey = process.env.SUPABASE_ANON_KEY;
+  const email = process.env.SUPABASE_UPLOAD_EMAIL;
+  const password = process.env.SUPABASE_UPLOAD_PASSWORD;
+  if (!url) throw new Error('Set SUPABASE_URL for --upload');
+  // Plain REST (storage-js sessions proved unreliable here): Authorization is
+  // either the service key or the signed-in pipeline user's JWT.
+  let apikey;
+  let bearer;
+  if (serviceKey) {
+    apikey = serviceKey;
+    bearer = serviceKey;
+  } else if (anonKey && email && password) {
+    // Dedicated pipeline account: only user with write policy on tutor-clips.
+    const res = await fetch(`${url}/auth/v1/token?grant_type=password`, {
+      method: 'POST',
+      headers: { apikey: anonKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    if (!res.ok) throw new Error(`pipeline sign-in failed: ${await res.text()}`);
+    apikey = anonKey;
+    bearer = (await res.json()).access_token;
+  } else {
+    throw new Error(
+      'Set SUPABASE_SERVICE_ROLE_KEY, or SUPABASE_ANON_KEY + SUPABASE_UPLOAD_EMAIL/PASSWORD',
+    );
+  }
+
   return async (path, buffer, contentType) => {
-    const { error } = await supabase.storage
-      .from('tutor-clips')
-      .upload(path, buffer, { contentType, upsert: true });
-    if (error) throw new Error(`upload ${path}: ${error.message}`);
+    const res = await fetch(`${url}/storage/v1/object/tutor-clips/${path}`, {
+      method: 'POST',
+      headers: {
+        apikey,
+        Authorization: `Bearer ${bearer}`,
+        'Content-Type': contentType,
+        'x-upsert': 'true',
+      },
+      body: buffer,
+    });
+    if (!res.ok) throw new Error(`upload ${path}: ${res.status} ${await res.text()}`);
   };
 }
 
@@ -263,7 +342,7 @@ if (flag('--bakeoff')) {
   for (const [name, synthesize] of Object.entries(PROVIDERS)) {
     for (const s of samples) {
       try {
-        const r = await synthesize(s.text);
+        const r = await synthesizeWithRetry(synthesize, s.text, `${name}_${s.id}`);
         const file = join(bakeoffDir, `${name}_${s.id}.${r.ext ?? 'mp3'}`);
         await writeFile(file, r.audio);
         console.log(`✔ ${file}`);
@@ -286,9 +365,24 @@ if (!synthesize) {
 const upload = flag('--upload') ? await makeUploader() : null;
 await mkdir(outDir, { recursive: true });
 
+const { existsSync } = await import('node:fs');
+
 let done = 0;
 for (const clip of clips) {
-  const r = await synthesize(clip.text);
+  // Resume support: skip clips already generated (delete files or pass
+  // --force to regenerate).
+  const existing = ['mp3', 'wav'].find((e) => existsSync(join(outDir, `${clip.id}.${e}`)));
+  if (existing && !flag('--force')) {
+    if (upload) {
+      const buf = await readFile(join(outDir, `${clip.id}.${existing}`));
+      await upload(`${clip.id}.${existing}`, buf, existing === 'wav' ? 'audio/wav' : 'audio/mpeg');
+    }
+    done += 1;
+    console.log(`↷ ${clip.id} already generated (${done}/${clips.length})`);
+    continue;
+  }
+  const r = await synthesizeWithRetry(synthesize, clip.text, clip.id);
+  await sleep(delayMs);
   const ext = r.ext ?? 'mp3';
   await writeFile(join(outDir, `${clip.id}.${ext}`), r.audio);
   if (r.visemes) {

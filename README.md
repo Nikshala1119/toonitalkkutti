@@ -58,13 +58,20 @@ npm run bakeoff          # 3 sample lines per configured provider (PRD §10)
 npm run generate:upload  # Azure clips + visemes → Supabase Storage
 ```
 
-Azure is the production provider (its SDK emits viseme events → mouth
-timelines). Set `AZURE_SPEECH_KEY` + `AZURE_SPEECH_REGION`; for the bake-off
-optionally `GOOGLE_TTS_API_KEY`, `ELEVENLABS_API_KEY`+`ELEVENLABS_VOICE_ID`,
-`GEMINI_API_KEY`. Upload needs `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`
-(dashboard → Settings → API; never ship it). The app downloads clips from the
-public `tutor-clips` bucket on first use, caches them on device, and falls
-back to device TTS for any clip not yet generated.
+The current clip set (all 70) was generated with **Gemini TTS**
+(`GEMINI_API_KEY`, free tier) and uploaded to the public `tutor-clips`
+bucket. Azure (`AZURE_SPEECH_KEY` + `AZURE_SPEECH_REGION`) remains the
+planned upgrade — its SDK emits viseme events for exact lip-sync; without
+them the app cycles mouth shapes while audio plays. Other bake-off providers:
+`GOOGLE_TTS_API_KEY`, `ELEVENLABS_API_KEY` (voice auto-picked if
+`ELEVENLABS_VOICE_ID` unset).
+
+Upload auth: either `SUPABASE_SERVICE_ROLE_KEY`, or the dedicated pipeline
+account (`SUPABASE_ANON_KEY` + `SUPABASE_UPLOAD_EMAIL`/`PASSWORD`) — the only
+user with write policies on the bucket. The app downloads clips on first use,
+caches them on device, and falls back to device TTS for any missing clip.
+Generated audio (`content/clips/`, `content/bakeoff/`) is gitignored —
+regenerate or fetch from storage.
 
 ## Dev build (Rive + real vision)
 

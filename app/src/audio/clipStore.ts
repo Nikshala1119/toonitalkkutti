@@ -34,8 +34,11 @@ async function getCached(fileName: string): Promise<File | null> {
 
 /** Local URI for a clip's audio, downloading on first use. Null → fall back to device TTS. */
 export async function getClipUri(clipId: string): Promise<string | null> {
-  const f = await getCached(`${clipId}.mp3`);
-  return f?.uri ?? null;
+  // Azure/Google/ElevenLabs produce .mp3; Gemini produces .wav
+  const mp3 = await getCached(`${clipId}.mp3`);
+  if (mp3) return mp3.uri;
+  const wav = await getCached(`${clipId}.wav`);
+  return wav?.uri ?? null;
 }
 
 /** Mouth-shape timeline for a clip, if the provider produced one. */

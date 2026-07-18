@@ -15,6 +15,27 @@ export type SpeakDone = () => void;
 type VisemeListener = (shape: string) => void;
 const visemeListeners = new Set<VisemeListener>();
 let visemeTimers: ReturnType<typeof setTimeout>[] = [];
+let mouthCycleTimer: ReturnType<typeof setInterval> | null = null;
+
+// Fallback mouth animation for clips without a viseme timeline (non-Azure
+// providers): cycle plausible shapes while audio is actually playing.
+const CYCLE_SHAPES = ['A', 'E', 'O', 'M', 'E', 'A', 'W', 'E'];
+
+function startMouthCycle() {
+  stopMouthCycle();
+  let i = 0;
+  mouthCycleTimer = setInterval(() => {
+    emitViseme(CYCLE_SHAPES[i % CYCLE_SHAPES.length]);
+    i += 1;
+  }, 120);
+}
+
+function stopMouthCycle() {
+  if (mouthCycleTimer) {
+    clearInterval(mouthCycleTimer);
+    mouthCycleTimer = null;
+  }
+}
 
 export function subscribeVisemes(cb: VisemeListener): () => void {
   visemeListeners.add(cb);
@@ -28,6 +49,7 @@ function emitViseme(shape: string) {
 function clearVisemeSchedule() {
   for (const t of visemeTimers) clearTimeout(t);
   visemeTimers = [];
+  stopMouthCycle();
   emitViseme('rest');
 }
 
@@ -63,6 +85,8 @@ async function playClip(clipId: string, onDone: SpeakDone): Promise<boolean> {
     visemeTimers.push(
       setTimeout(() => emitViseme('rest'), visemes.durationMs + 50),
     );
+  } else {
+    startMouthCycle();
   }
 
   player.addListener('playbackStatusUpdate', (status) => {
