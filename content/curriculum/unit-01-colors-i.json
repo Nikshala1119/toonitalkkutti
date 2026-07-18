@@ -1,0 +1,211 @@
+{
+  "unit": {
+    "id": 1,
+    "slug": "colors-i",
+    "titleEn": "Colors I",
+    "titleTa": "நிறங்கள் 1",
+    "position": 1,
+    "isFree": true
+  },
+  "activities": [
+    {
+      "id": "u1-a01",
+      "type": "tap_answer",
+      "skill": "color.red",
+      "prompts": {
+        "A": { "ta": "இது சிவப்பு! RED! சிவப்பு நிறத்தை தொடு!", "en": "Touch RED!" },
+        "B": { "en": "Touch RED!", "ta": "சிவப்பு நிறத்தை தொடு!" },
+        "C": { "en": "Which one is RED? Touch it!" }
+      },
+      "payload": {
+        "kind": "tap_answer",
+        "choices": [
+          { "id": "red", "image": "swatch_red" },
+          { "id": "blue", "image": "swatch_blue" }
+        ],
+        "correctId": "red"
+      }
+    },
+    {
+      "id": "u1-a02",
+      "type": "tap_answer",
+      "skill": "color.blue",
+      "prompts": {
+        "A": { "ta": "இது நீலம்! BLUE! நீல நிறத்தை தொடு!", "en": "Touch BLUE!" },
+        "B": { "en": "Touch BLUE!", "ta": "நீல நிறத்தை தொடு!" },
+        "C": { "en": "Which one is BLUE? Touch it!" }
+      },
+      "payload": {
+        "kind": "tap_answer",
+        "choices": [
+          { "id": "red", "image": "swatch_red" },
+          { "id": "blue", "image": "swatch_blue" },
+          { "id": "yellow", "image": "swatch_yellow" }
+        ],
+        "correctId": "blue"
+      }
+    },
+    {
+      "id": "u1-a03",
+      "type": "say_it_back",
+      "skill": "color.red",
+      "prompts": {
+        "A": { "ta": "சிவப்பு! இப்போ நீ சொல்லு: RED!", "en": "Say it: RED!" },
+        "B": { "en": "Your turn! Say: RED!", "ta": "நீ சொல்லு: RED!" },
+        "C": { "en": "What color is this? Say it!" }
+      },
+      "payload": { "kind": "say_it_back", "word": "red", "image": "swatch_red" }
+    },
+    {
+      "id": "u1-a04",
+      "type": "tap_answer",
+      "skill": "color.yellow",
+      "prompts": {
+        "A": { "ta": "இது மஞ்சள்! YELLOW! மஞ்சள் நிறத்தை தொடு!", "en": "Touch YELLOW!" },
+        "B": { "en": "Touch YELLOW!", "ta": "மஞ்சள் நிறத்தை தொடு!" },
+        "C": { "en": "Find YELLOW and touch it!" }
+      },
+      "payload": {
+        "kind": "tap_answer",
+        "choices": [
+          { "id": "yellow", "image": "swatch_yellow" },
+          { "id": "green", "image": "swatch_green" },
+          { "id": "red", "image": "swatch_red" }
+        ],
+        "correctId": "yellow"
+      }
+    },
+    {
+      "id": "u1-a05",
+      "type": "tap_answer",
+      "skill": "color.green",
+      "prompts": {
+        "A": { "ta": "இது பச்சை! GREEN! பச்சை நிறத்தை தொடு!", "en": "Touch GREEN!" },
+        "B": { "en": "Touch GREEN!", "ta": "பச்சை நிறத்தை தொடு!" },
+        "C": { "en": "Which one is GREEN?" }
+      },
+      "payload": {
+        "kind": "tap_answer",
+        "choices": [
+          { "id": "blue", "image": "swatch_blue" },
+          { "id": "green", "image": "swatch_green" },
+          { "id": "yellow", "image": "swatch_yellow" },
+          { "id": "red", "image": "swatch_red" }
+        ],
+        "correctId": "green"
+      }
+    },
+    {
+      "id": "u1-a06",
+      "type": "say_it_back",
+      "skill": "color.blue",
+      "prompts": {
+        "A": { "ta": "நீலம்! இப்போ நீ சொல்லு: BLUE!", "en": "Say it: BLUE!" },
+        "B": { "en": "Your turn! Say: BLUE!", "ta": "நீ சொல்லு: BLUE!" },
+        "C": { "en": "What color is this? Say it!" }
+      },
+      "payload": { "kind": "say_it_back", "word": "blue", "image": "swatch_blue" }
+    },
+    {
+      "id": "u1-a07",
+      "type": "find_color",
+      "skill": "color.red",
+      "prompts": {
+        "A": { "ta": "சிவப்பு நிறப் பொருள் ஒன்றை கேமராவுக்கு காட்டு!", "en": "Show me something RED!" },
+        "B": { "en": "Find something RED and show me!", "ta": "சிவப்பு பொருளை காட்டு!" },
+        "C": { "en": "Look around! Show me something RED!" }
+      },
+      "payload": { "kind": "find_color", "color": "red" },
+      "tapFallback": {
+        "kind": "tap_answer",
+        "choices": [
+          { "id": "red", "image": "apple_red" },
+          { "id": "yellow", "image": "banana_yellow" },
+          { "id": "green", "image": "leaf_green" }
+        ],
+        "correctId": "red"
+      }
+    },
+    {
+      "id": "u1-a08",
+      "type": "find_color",
+      "skill": "color.blue",
+      "prompts": {
+        "A": { "ta": "நீல நிறப் பொருள் ஒன்றை கேமராவுக்கு காட்டு!", "en": "Show me something BLUE!" },
+        "B": { "en": "Find something BLUE and show me!", "ta": "நீல பொருளை காட்டு!" },
+        "C": { "en": "Look around! Show me something BLUE!" }
+      },
+      "payload": { "kind": "find_color", "color": "blue" },
+      "tapFallback": {
+        "kind": "tap_answer",
+        "choices": [
+          { "id": "blue", "image": "ball_blue" },
+          { "id": "red", "image": "apple_red" },
+          { "id": "green", "image": "leaf_green" }
+        ],
+        "correctId": "blue"
+      }
+    },
+    {
+      "id": "u1-a09",
+      "type": "tap_answer",
+      "skill": "color.yellow",
+      "prompts": {
+        "A": { "ta": "வாழைப்பழம் என்ன நிறம்? மஞ்சள்! YELLOW-ஐ தொடு!", "en": "Touch the YELLOW one!" },
+        "B": { "en": "The banana is YELLOW! Touch YELLOW!", "ta": "மஞ்சளை தொடு!" },
+        "C": { "en": "What color is a banana? Touch it!" }
+      },
+      "payload": {
+        "kind": "tap_answer",
+        "choices": [
+          { "id": "yellow", "image": "banana_yellow" },
+          { "id": "red", "image": "apple_red" },
+          { "id": "blue", "image": "ball_blue" },
+          { "id": "green", "image": "leaf_green" }
+        ],
+        "correctId": "yellow"
+      }
+    },
+    {
+      "id": "u1-a10",
+      "type": "find_color",
+      "skill": "color.green",
+      "prompts": {
+        "A": { "ta": "பச்சை நிறப் பொருள் ஒன்றை கேமராவுக்கு காட்டு!", "en": "Show me something GREEN!" },
+        "B": { "en": "Find something GREEN and show me!", "ta": "பச்சை பொருளை காட்டு!" },
+        "C": { "en": "Look around! Show me something GREEN!" }
+      },
+      "payload": { "kind": "find_color", "color": "green" },
+      "tapFallback": {
+        "kind": "tap_answer",
+        "choices": [
+          { "id": "green", "image": "leaf_green" },
+          { "id": "blue", "image": "ball_blue" },
+          { "id": "yellow", "image": "banana_yellow" }
+        ],
+        "correctId": "green"
+      }
+    },
+    {
+      "id": "u1-r01",
+      "type": "tap_answer",
+      "skill": "color.review",
+      "isReview": true,
+      "prompts": {
+        "A": { "ta": "சூப்பர்! கடைசி கேள்வி: சிவப்பை தொடு! RED!", "en": "Last one! Touch RED!" },
+        "B": { "en": "Last one! Touch RED!", "ta": "சிவப்பை தொடு!" },
+        "C": { "en": "Final question! Which one is RED?" }
+      },
+      "payload": {
+        "kind": "tap_answer",
+        "choices": [
+          { "id": "green", "image": "swatch_green" },
+          { "id": "red", "image": "swatch_red" },
+          { "id": "blue", "image": "swatch_blue" },
+          { "id": "yellow", "image": "swatch_yellow" }
+        ],
+        "correctId": "red"
+      }
+    }
+  ]
+}

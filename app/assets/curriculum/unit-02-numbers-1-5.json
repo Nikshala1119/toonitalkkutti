@@ -1,0 +1,191 @@
+{
+  "unit": {
+    "id": 2,
+    "slug": "numbers-1-5",
+    "titleEn": "Numbers 1–5",
+    "titleTa": "எண்கள் 1–5",
+    "position": 2,
+    "isFree": true
+  },
+  "activities": [
+    {
+      "id": "u2-a01",
+      "type": "tap_answer",
+      "skill": "number.1",
+      "prompts": {
+        "A": { "ta": "இது ஒன்று! ONE! ஒரு பந்து இருக்கும் படத்தை தொடு!", "en": "Touch ONE ball!" },
+        "B": { "en": "Touch the picture with ONE ball!", "ta": "ஒரு பந்தை தொடு!" },
+        "C": { "en": "Which picture shows ONE? Touch it!" }
+      },
+      "payload": {
+        "kind": "tap_answer",
+        "choices": [
+          { "id": "one", "image": "balls_1" },
+          { "id": "three", "image": "balls_3" }
+        ],
+        "correctId": "one"
+      }
+    },
+    {
+      "id": "u2-a02",
+      "type": "show_fingers",
+      "skill": "number.2",
+      "prompts": {
+        "A": { "ta": "இரண்டு விரல்களை காட்டு! Show me TWO fingers!", "en": "Show me TWO fingers!" },
+        "B": { "en": "Show me TWO fingers!", "ta": "இரண்டு விரல்களை காட்டு!" },
+        "C": { "en": "Can you show me TWO fingers?" }
+      },
+      "payload": { "kind": "show_fingers", "count": 2 },
+      "tapFallback": {
+        "kind": "tap_answer",
+        "choices": [
+          { "id": "two", "image": "fingers_2" },
+          { "id": "four", "image": "fingers_4" },
+          { "id": "one", "image": "fingers_1" }
+        ],
+        "correctId": "two"
+      }
+    },
+    {
+      "id": "u2-a03",
+      "type": "tap_answer",
+      "skill": "number.3",
+      "prompts": {
+        "A": { "ta": "மூன்று! THREE! மூன்று ஆப்பிள் இருக்கும் படத்தை தொடு!", "en": "Touch THREE apples!" },
+        "B": { "en": "Touch the picture with THREE apples!", "ta": "மூன்று ஆப்பிளை தொடு!" },
+        "C": { "en": "Count and touch THREE!" }
+      },
+      "payload": {
+        "kind": "tap_answer",
+        "choices": [
+          { "id": "two", "image": "apples_2" },
+          { "id": "three", "image": "apples_3" },
+          { "id": "five", "image": "apples_5" }
+        ],
+        "correctId": "three"
+      }
+    },
+    {
+      "id": "u2-a04",
+      "type": "show_fingers",
+      "skill": "number.3",
+      "prompts": {
+        "A": { "ta": "மூன்று விரல்களை காட்டு! Show me THREE fingers!", "en": "Show me THREE fingers!" },
+        "B": { "en": "Show me THREE fingers!", "ta": "மூன்று விரல்களை காட்டு!" },
+        "C": { "en": "Now show me THREE fingers!" }
+      },
+      "payload": { "kind": "show_fingers", "count": 3 },
+      "tapFallback": {
+        "kind": "tap_answer",
+        "choices": [
+          { "id": "three", "image": "fingers_3" },
+          { "id": "two", "image": "fingers_2" },
+          { "id": "five", "image": "fingers_5" }
+        ],
+        "correctId": "three"
+      }
+    },
+    {
+      "id": "u2-a05",
+      "type": "say_it_back",
+      "skill": "number.3",
+      "prompts": {
+        "A": { "ta": "மூன்று! இப்போ நீ சொல்லு: THREE!", "en": "Say it: THREE!" },
+        "B": { "en": "Your turn! Say: THREE!", "ta": "நீ சொல்லு: THREE!" },
+        "C": { "en": "How many? Say the number!" }
+      },
+      "payload": { "kind": "say_it_back", "word": "three", "image": "apples_3" }
+    },
+    {
+      "id": "u2-a06",
+      "type": "tap_answer",
+      "skill": "number.4",
+      "prompts": {
+        "A": { "ta": "நான்கு! FOUR! நான்கு நட்சத்திரங்களை தொடு!", "en": "Touch FOUR stars!" },
+        "B": { "en": "Touch the picture with FOUR stars!", "ta": "நான்கு நட்சத்திரத்தை தொடு!" },
+        "C": { "en": "Count and touch FOUR!" }
+      },
+      "payload": {
+        "kind": "tap_answer",
+        "choices": [
+          { "id": "four", "image": "stars_4" },
+          { "id": "one", "image": "stars_1" },
+          { "id": "three", "image": "stars_3" }
+        ],
+        "correctId": "four"
+      }
+    },
+    {
+      "id": "u2-a07",
+      "type": "show_fingers",
+      "skill": "number.4",
+      "prompts": {
+        "A": { "ta": "நான்கு விரல்களை காட்டு! Show me FOUR fingers!", "en": "Show me FOUR fingers!" },
+        "B": { "en": "Show me FOUR fingers!", "ta": "நான்கு விரல்களை காட்டு!" },
+        "C": { "en": "Can you show FOUR fingers?" }
+      },
+      "payload": { "kind": "show_fingers", "count": 4 },
+      "tapFallback": {
+        "kind": "tap_answer",
+        "choices": [
+          { "id": "four", "image": "fingers_4" },
+          { "id": "three", "image": "fingers_3" },
+          { "id": "five", "image": "fingers_5" }
+        ],
+        "correctId": "four"
+      }
+    },
+    {
+      "id": "u2-a08",
+      "type": "say_it_back",
+      "skill": "number.5",
+      "prompts": {
+        "A": { "ta": "ஐந்து! FIVE! இப்போ நீ சொல்லு: FIVE!", "en": "Say it: FIVE!" },
+        "B": { "en": "Your turn! Say: FIVE!", "ta": "நீ சொல்லு: FIVE!" },
+        "C": { "en": "How many fingers? Say it!" }
+      },
+      "payload": { "kind": "say_it_back", "word": "five", "image": "fingers_5" }
+    },
+    {
+      "id": "u2-a09",
+      "type": "show_fingers",
+      "skill": "number.5",
+      "prompts": {
+        "A": { "ta": "ஐந்து விரல்களை காட்டு! Show me FIVE fingers! முழு கை!", "en": "Show me FIVE fingers!" },
+        "B": { "en": "Show me FIVE fingers! The whole hand!", "ta": "ஐந்து விரல்களை காட்டு!" },
+        "C": { "en": "Show me FIVE — high five!" }
+      },
+      "payload": { "kind": "show_fingers", "count": 5 },
+      "tapFallback": {
+        "kind": "tap_answer",
+        "choices": [
+          { "id": "five", "image": "fingers_5" },
+          { "id": "two", "image": "fingers_2" },
+          { "id": "four", "image": "fingers_4" }
+        ],
+        "correctId": "five"
+      }
+    },
+    {
+      "id": "u2-r01",
+      "type": "show_fingers",
+      "skill": "number.review",
+      "isReview": true,
+      "prompts": {
+        "A": { "ta": "கடைசி! ஒரு விரல் காட்டு! Show me ONE finger!", "en": "Show me ONE finger!" },
+        "B": { "en": "Last one! Show me ONE finger!", "ta": "ஒரு விரல் காட்டு!" },
+        "C": { "en": "Final one! Show me ONE finger!" }
+      },
+      "payload": { "kind": "show_fingers", "count": 1 },
+      "tapFallback": {
+        "kind": "tap_answer",
+        "choices": [
+          { "id": "one", "image": "fingers_1" },
+          { "id": "five", "image": "fingers_5" },
+          { "id": "three", "image": "fingers_3" }
+        ],
+        "correctId": "one"
+      }
+    }
+  ]
+}
