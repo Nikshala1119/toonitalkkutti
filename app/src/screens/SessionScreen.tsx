@@ -41,6 +41,7 @@ export function SessionScreen({
   const cameraEnabled = useAppStore((s) => s.cameraEnabled);
   const levelForSkill = useAppStore((s) => s.levelForSkill);
   const recordResult = useAppStore((s) => s.recordResult);
+  const serverChildId = useAppStore((s) => s.serverChildId);
 
   const activity = activities[index];
   const level = useMemo(
@@ -126,7 +127,7 @@ export function SessionScreen({
 
     enqueueAttempt({
       id: newAttemptId(),
-      child_id: null, // linked once profiles sync to a Supabase project
+      child_id: serverChildId,
       activity_id: activity.id,
       skill: activity.skill,
       tries: run.tryNumber,

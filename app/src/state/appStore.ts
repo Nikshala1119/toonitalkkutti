@@ -27,6 +27,12 @@ interface AppState {
   cameraEnabled: boolean;
   dailyLimitMinutes: number;
 
+  /** Parent finished onboarding (consent recorded — NFR-4) */
+  onboarded: boolean;
+  /** Server row ids once cloud-linked; null in local-only mode */
+  serverFamilyId: string | null;
+  serverChildId: string | null;
+
   /** activity ids completed at least once */
   completedActivities: Record<string, true>;
   starsByUnit: Record<number, number>;
@@ -34,6 +40,14 @@ interface AppState {
   streak: StreakState;
 
   setNickname: (n: string) => void;
+  completeOnboarding: (args: {
+    nickname: string;
+    cameraEnabled: boolean;
+    serverFamilyId: string | null;
+    serverChildId: string | null;
+  }) => void;
+  setCameraEnabled: (v: boolean) => void;
+  setDailyLimit: (minutes: number) => void;
   levelForSkill: (skill: string) => LanguageLevel;
   recordResult: (args: {
     activity: Activity;
@@ -70,12 +84,27 @@ export const useAppStore = create<AppState>()(
       childNickname: null,
       cameraEnabled: true,
       dailyLimitMinutes: 20,
+      onboarded: false,
+      serverFamilyId: null,
+      serverChildId: null,
       completedActivities: {},
       starsByUnit: {},
       skills: {},
       streak: { current: 0, longest: 0, lastActiveDate: null },
 
       setNickname: (n) => set({ childNickname: n }),
+
+      completeOnboarding: ({ nickname, cameraEnabled, serverFamilyId, serverChildId }) =>
+        set({
+          childNickname: nickname,
+          cameraEnabled,
+          serverFamilyId,
+          serverChildId,
+          onboarded: true,
+        }),
+
+      setCameraEnabled: (v) => set({ cameraEnabled: v }),
+      setDailyLimit: (minutes) => set({ dailyLimitMinutes: minutes }),
 
       levelForSkill: (skill) => get().skills[skill]?.level ?? 'A',
 

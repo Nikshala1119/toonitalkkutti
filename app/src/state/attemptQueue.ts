@@ -50,6 +50,22 @@ export async function enqueueAttempt(record: AttemptRecord): Promise<void> {
 }
 
 /**
+ * Attach a server child id to every queued attempt that predates linking,
+ * so the backlog syncs once the profile exists (NFR-2).
+ */
+export async function assignChildToQueued(childId: string): Promise<void> {
+  const queue = await readQueue();
+  let changed = false;
+  for (const a of queue) {
+    if (a.child_id === null) {
+      a.child_id = childId;
+      changed = true;
+    }
+  }
+  if (changed) await writeQueue(queue);
+}
+
+/**
  * Push queued attempts to Supabase. Safe to call any time; keeps records
  * that fail (or that have no server child id yet) for the next run.
  */
